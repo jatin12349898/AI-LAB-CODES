@@ -1,79 +1,98 @@
 import copy
-openl = []
-closed = []
 
-initial_state = [
-  ['A'],
-  ['B','C'],
-  []
-]
+openl=[]
+closed=[]
+count=0
 
-goal_state = [
-  ['A','B','C'],
+goal_state=[
   [],
-  []  
+  [],
+  ['A','B','C']
 ]
 
-def compare(s):
-  return s==goal_state
+initial_state =[
+  [],
+  ['A'],
+  ['B','C']
+]
 
-def generate_child_dfs(s):
+def compare(s,g):
+  global count
+  count+=1
+  s[0].sort()
+  g.sort()
+  return s[0]==g
+
+def generate_child(s,depth):
   global openl
-  child = []
-  for i in range(len(s)):
-    if s[i]:
-      top_block = s[i][-1]
-      state = copy.deepcopy(s)
-      state[i].pop()
-      for j in range(len(state)):
+  global closed
+  global g
+  if(s==[]):
+    return
+  s[0].sort()
+
+  if(s[1]==depth):
+    generate_child(s[2], depth)
+    return
+
+  for i in range(len(s[0])):
+    if len(s[0][i])>0:
+      new_state=copy.deepcopy(s)
+      new_state[2]=s
+      pick_element=new_state[0][i][-1]
+      del new_state[0][i][-1]
+
+      for j in range(len(new_state[0])):
         if i!=j:
-          new_state = copy.deepcopy(state)
-          new_state[j].append(top_block)
-          if new_state not in child and new_state not in closed:
-              child.append(new_state)
-    
-    return child
-            
-def depth_limit(s,limit):
-    if limit < 0:
-        return False
+          new_state[0][j].append(pick_element)
+          new_state[1]+=1
+          final_state=copy.deepcopy(new_state)
+          final_state[0].sort()
+          if final_state not in openl and final_state[0] not in closed:
+            openl.append(final_state)
+            return
+          del final_state
+          del new_state[0][j][-1]
+          new_state[1]-=1
+  generate_child(s[2], depth)
 
-    openl = [s]
-    while openl:
-        current_state = openl.pop(0)
-        
-        if compare(current_state):
-            return True
-        
-        if limit > 0:
-            new_state = generate_child_dfs(current_state)
-            openl = new_state + openl
-        
-        closed.append(current_state)
-    
-    return False            
-
-def iterative_deep(s):
-    limit = 0
-    while True:
-        found = depth_limit(s,limit)
-        
-        if found :
-            print(f"Found at depth {limit}")
-            return True
-
-        limit += 1
-        
-        if limit > 100:
-            print("Maximum depth limit reached")
-            return False
-    
-  
-def main():
-    solution = iterative_deep(initial_state)
-    if solution:
-        print("Goal found.")
+def search(g, depth):
+  global openl
+  global closed
+  while 1:
+    if(openl==[]):
+      print("Search was incomplete")
+      return []
+    openl[0][0].sort()
+    current_state=openl[0]
+    del openl[0]
+    if compare(current_state,g):
+      print("Found\n")
+      return current_state
     else:
-        print("No solution found")
+      closed.append(current_state[0])
+      generate_child(current_state, depth)
 
-main()
+def main():
+  global openl
+  global closed
+  global goal_state
+  global initial_state
+  global count
+
+  openl.append([initial_state,0,[]])
+  depth=1
+  while 1:
+    sol=search(goal_state,depth)
+    if sol==[]:
+      depth += 1
+      openl.append([initial_state,0,[]])
+      closed=[]
+    else:
+      break
+    
+  print("The depth at which the goal state is found is: ",sol[1])
+  print("The number of states it visited is: ",count)
+
+if __name__=="__main__":
+  main()
